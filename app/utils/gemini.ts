@@ -214,10 +214,11 @@ export async function generatePropertyRecommendations(
     throw new Error('Invalid or empty API key provided');
   }
 
-  // Validate preferences
-  if (!preferences.location) {
-    throw new Error('Location is required for property recommendations');
-  }
+  // Fix: Make location optional by providing a default value if it's missing
+  const enhancedPreferences = {
+    ...preferences,
+    location: preferences.location || 'Any location'
+  };
 
   // Log the model creation attempt
   console.log('Creating Gemini model with safety settings');
@@ -247,16 +248,16 @@ export async function generatePropertyRecommendations(
 
     // Construct the prompt with language-specific instructions
     const prompt = promptTemplate.instructions
-      .replace('{location}', preferences.location)
-      .replace('{minBudget}', preferences.budget.min.toLocaleString())
-      .replace('{maxBudget}', preferences.budget.max.toLocaleString())
-      .replace('{bedrooms}', preferences.bedrooms.toString())
-      .replace('{bathrooms}', preferences.bathrooms.toString())
-      .replace('{propertyType}', preferences.propertyType)
-      .replace('{mustHaveFeatures}', preferences.mustHaveFeatures.join(', '))
-      .replace('{preferredFeatures}', preferences.preferredFeatures.join(', '))
-      .replace('{timeframe}', preferences.timeframe)
-      .replace('{additionalInfo}', preferences.additionalInfo)
+      .replace('{location}', enhancedPreferences.location)
+      .replace('{minBudget}', enhancedPreferences.budget.min.toLocaleString())
+      .replace('{maxBudget}', enhancedPreferences.budget.max.toLocaleString())
+      .replace('{bedrooms}', enhancedPreferences.bedrooms.toString())
+      .replace('{bathrooms}', enhancedPreferences.bathrooms.toString())
+      .replace('{propertyType}', enhancedPreferences.propertyType)
+      .replace('{mustHaveFeatures}', enhancedPreferences.mustHaveFeatures.join(', '))
+      .replace('{preferredFeatures}', enhancedPreferences.preferredFeatures.join(', '))
+      .replace('{timeframe}', enhancedPreferences.timeframe)
+      .replace('{additionalInfo}', enhancedPreferences.additionalInfo)
       .replace('{jsonStructure}', promptTemplate.jsonGuide);
 
     try {

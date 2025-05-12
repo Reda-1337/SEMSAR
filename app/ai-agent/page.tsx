@@ -108,6 +108,13 @@ export default function AIAgentPage() {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate location field
+    if (!preferences.location || preferences.location.trim() === '') {
+      alert("Please enter a location. This is required for property recommendations.");
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -161,9 +168,9 @@ export default function AIAgentPage() {
             <div className="space-y-4">
               <h3 className="text-lg font-medium mb-4">Basic Information</h3>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
+              <div className="border-l-4 border-blue-500 pl-4 pb-4 bg-blue-50 rounded-r p-3">
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Location <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -171,9 +178,12 @@ export default function AIAgentPage() {
                   value={preferences.location}
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
-                  placeholder="City, neighborhood, or zip code"
+                  placeholder="City, neighborhood, or zip code (required)"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  This field is required for the AI to generate property recommendations.
+                </p>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
