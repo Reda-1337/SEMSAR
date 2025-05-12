@@ -5,7 +5,26 @@ let genAI: GoogleGenerativeAI;
 
 // Initialize the model with your API key
 export function initializeGemini(apiKey: string) {
-  genAI = new GoogleGenerativeAI(apiKey);
+  if (!apiKey || apiKey.trim() === '' || apiKey === 'your_gemini_api_key_here') {
+    throw new Error('Invalid Gemini API key. Please provide a valid API key.');
+  }
+  
+  try {
+    console.log('Initializing Gemini AI with provided API key');
+    genAI = new GoogleGenerativeAI(apiKey);
+    
+    // Store the API key for validation checks
+    Object.defineProperty(genAI, 'apiKey', {
+      value: apiKey,
+      writable: false,
+      configurable: false
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize Gemini AI:', error);
+    throw new Error(`Failed to initialize Gemini AI: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 // Property preference types
@@ -190,57 +209,103 @@ export async function generatePropertyRecommendations(
     throw new Error('Gemini API not initialized. Call initializeGemini first.');
   }
 
+  // Validate the API key format (basic check)
+  if (!genAI.apiKey || genAI.apiKey.trim() === '') {
+    throw new Error('Invalid or empty API key provided');
+  }
+
+  // Validate preferences
+  if (!preferences.location) {
+    throw new Error('Location is required for property recommendations');
+  }
+
+  // Log the model creation attempt
+  console.log('Creating Gemini model with safety settings');
+
   // Get the generative model
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-pro',
-    safetySettings: [
-      {
-        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-    ],
-  });
-
-  // Get language-specific prompt (default to English if not specified)
-  const language = preferences.language || 'en';
-  const promptTemplate = languagePrompts[language] || languagePrompts.en;
-
-  // Construct the prompt with language-specific instructions
-  const prompt = promptTemplate.instructions
-    .replace('{location}', preferences.location)
-    .replace('{minBudget}', preferences.budget.min.toLocaleString())
-    .replace('{maxBudget}', preferences.budget.max.toLocaleString())
-    .replace('{bedrooms}', preferences.bedrooms.toString())
-    .replace('{bathrooms}', preferences.bathrooms.toString())
-    .replace('{propertyType}', preferences.propertyType)
-    .replace('{mustHaveFeatures}', preferences.mustHaveFeatures.join(', '))
-    .replace('{preferredFeatures}', preferences.preferredFeatures.join(', '))
-    .replace('{timeframe}', preferences.timeframe)
-    .replace('{additionalInfo}', preferences.additionalInfo)
-    .replace('{jsonStructure}', promptTemplate.jsonGuide);
-
   try {
-    // Generate content
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
-    
-    // Extract the JSON from the text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Failed to extract valid JSON from the response');
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-pro',
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        },
+      ],
+    });
+
+    // Get language-specific prompt (default to English if not specified)
+    const language = preferences.language || 'en';
+    const promptTemplate = languagePrompts[language] || languagePrompts.en;
+
+    // Log the prompt construction
+    console.log(`Constructing prompt in ${language} language`);
+
+    // Construct the prompt with language-specific instructions
+    const prompt = promptTemplate.instructions
+      .replace('{location}', preferences.location)
+      .replace('{minBudget}', preferences.budget.min.toLocaleString())
+      .replace('{maxBudget}', preferences.budget.max.toLocaleString())
+      .replace('{bedrooms}', preferences.bedrooms.toString())
+      .replace('{bathrooms}', preferences.bathrooms.toString())
+      .replace('{propertyType}', preferences.propertyType)
+      .replace('{mustHaveFeatures}', preferences.mustHaveFeatures.join(', '))
+      .replace('{preferredFeatures}', preferences.preferredFeatures.join(', '))
+      .replace('{timeframe}', preferences.timeframe)
+      .replace('{additionalInfo}', preferences.additionalInfo)
+      .replace('{jsonStructure}', promptTemplate.jsonGuide);
+
+    try {
+      // Generate content
+      console.log('Sending request to Gemini API...');
+      const result = await model.generateContent(prompt);
+      
+      if (!result || !result.response) {
+        throw new Error('Empty response from Gemini API');
+      }
+      
+      console.log('Received response from Gemini API');
+      const response = result.response;
+      const text = response.text();
+      
+      if (!text || text.trim() === '') {
+        throw new Error('Empty text in Gemini response');
+      }
+      
+      // Extract the JSON from the text
+      console.log('Extracting JSON from response');
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('Failed to extract JSON. Response text:', text.substring(0, 200) + '...');
+        throw new Error('Failed to extract valid JSON from the response');
+      }
+      
+      const jsonStr = jsonMatch[0];
+      console.log('Parsing JSON response');
+      try {
+        const agentResponse = JSON.parse(jsonStr) as AIAgentResponse;
+        
+        // Validate the response structure
+        if (!agentResponse.recommendations || !Array.isArray(agentResponse.recommendations)) {
+          throw new Error('Invalid response structure: recommendations array is missing');
+        }
+        
+        return agentResponse;
+      } catch (jsonError) {
+        console.error('JSON parsing error:', jsonError);
+        console.error('JSON string that failed to parse:', jsonStr.substring(0, 200) + '...');
+        throw new Error('Failed to parse JSON response from Gemini API');
+      }
+    } catch (apiError) {
+      console.error('Error calling Gemini API:', apiError);
+      throw apiError;
     }
-    
-    const jsonStr = jsonMatch[0];
-    const agentResponse = JSON.parse(jsonStr) as AIAgentResponse;
-    
-    return agentResponse;
-  } catch (error) {
-    console.error('Error generating property recommendations:', error);
-    throw error;
+  } catch (modelError) {
+    console.error('Error creating Gemini model:', modelError);
+    throw modelError;
   }
 } 

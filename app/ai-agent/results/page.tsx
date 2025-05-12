@@ -40,22 +40,50 @@ export default function AIAgentResultsPage() {
         return;
       }
       
-      initializeGemini(apiKey);
+      // Debug logging
+      console.log('Using API Key:', apiKey ? 'API key is present (hidden for security)' : 'No API key found');
+      console.log('User preferences:', {
+        ...parsedPreferences,
+        // Don't log all details for privacy
+        hasLocation: !!parsedPreferences.location,
+        hasBudget: !!parsedPreferences.budget,
+        preferredLanguage: parsedPreferences.language
+      });
       
-      // Generate property recommendations
-      generatePropertyRecommendations(parsedPreferences)
-        .then(response => {
-          setResults(response);
-          setIsLoading(false);
-        })
-        .catch(err => {
-          console.error('Error generating recommendations:', err);
-          setError('An error occurred while generating recommendations. Please try again.');
-          setIsLoading(false);
-        });
-    } catch (err) {
-      console.error('Error parsing preferences:', err);
-      setError('An error occurred while processing your preferences. Please try again.');
+      try {
+        initializeGemini(apiKey);
+        console.log('Gemini API initialized successfully');
+        
+        // Generate property recommendations
+        generatePropertyRecommendations(parsedPreferences)
+          .then(response => {
+            console.log('Received recommendations successfully');
+            setResults(response);
+            setIsLoading(false);
+          })
+          .catch(err => {
+            console.error('Error generating recommendations:', err);
+            // Extract more detailed error information
+            const errorMessage = err instanceof Error 
+              ? `${err.name}: ${err.message}` 
+              : 'Unknown error occurred';
+            setError(`An error occurred while generating recommendations: ${errorMessage}. Please try again.`);
+            setIsLoading(false);
+          });
+      } catch (initError) {
+        console.error('Error initializing Gemini API:', initError);
+        const errorMessage = initError instanceof Error 
+          ? `${initError.name}: ${initError.message}` 
+          : 'Unknown initialization error';
+        setError(`Failed to initialize AI service: ${errorMessage}`);
+        setIsLoading(false);
+      }
+    } catch (parseError) {
+      console.error('Error parsing preferences:', parseError);
+      const errorMessage = parseError instanceof Error 
+        ? `${parseError.name}: ${parseError.message}` 
+        : 'Unknown parsing error';
+      setError(`An error occurred while processing your preferences: ${errorMessage}. Please try again.`);
       setIsLoading(false);
     }
   }, []);
@@ -170,12 +198,37 @@ export default function AIAgentResultsPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
           <h1 className="text-2xl font-bold text-red-700 mb-4">{getText('error')}</h1>
           <p className="text-red-700 mb-4">{error}</p>
-          <button
-            onClick={handleBack}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            {getText('goBack')}
-          </button>
+          
+          {/* Fallback suggestion */}
+          <div className="mt-6 mb-6 bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold mb-2">Alternative Options</h2>
+            <p className="mb-4">While we're fixing this issue, you can try:</p>
+            <ul className="list-disc list-inside space-y-2 mb-4">
+              <li>Refreshing the page and trying again</li>
+              <li>Using different preferences</li>
+              <li>Checking back in a few minutes</li>
+              <li>Browsing our regular property listings instead</li>
+            </ul>
+            <p className="text-sm text-gray-600">
+              Note: This feature requires the Gemini API to be properly configured. 
+              If you're the administrator, please verify your API key is correctly set up.
+            </p>
+          </div>
+          
+          <div className="flex space-x-4">
+            <button
+              onClick={handleBack}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              {getText('goBack')}
+            </button>
+            <a 
+              href="/search"
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 inline-block"
+            >
+              Browse Properties
+            </a>
+          </div>
         </div>
       </div>
     );
