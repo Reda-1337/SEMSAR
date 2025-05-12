@@ -54,8 +54,18 @@ export default function AIAgentResultsPage() {
         initializeGemini(apiKey);
         console.log('Gemini API initialized successfully');
         
-        // Generate property recommendations
-        generatePropertyRecommendations(parsedPreferences)
+        // Generate property recommendations with timeout handling
+        const timeoutPromise = new Promise<AIAgentResponse>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Request timed out. The Gemini API is taking too long to respond.'));
+          }, 30000); // 30 second timeout
+        });
+        
+        // Race between the API call and the timeout
+        Promise.race([
+          generatePropertyRecommendations(parsedPreferences),
+          timeoutPromise
+        ])
           .then(response => {
             console.log('Received recommendations successfully');
             setResults(response);
@@ -63,10 +73,15 @@ export default function AIAgentResultsPage() {
           })
           .catch(err => {
             console.error('Error generating recommendations:', err);
-            // Extract more detailed error information
-            const errorMessage = err instanceof Error 
-              ? `${err.name}: ${err.message}` 
-              : 'Unknown error occurred';
+            
+            // Handle network errors specifically
+            let errorMessage = err instanceof Error ? `${err.name}: ${err.message}` : 'Unknown error occurred';
+            
+            if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError') || 
+                errorMessage.includes('timed out') || errorMessage.includes('Failed to connect')) {
+              errorMessage = 'Network error: Unable to connect to the AI service. Please check your internet connection and try again later.';
+            }
+            
             setError(`An error occurred while generating recommendations: ${errorMessage}. Please try again.`);
             setIsLoading(false);
           });
@@ -209,9 +224,22 @@ export default function AIAgentResultsPage() {
               <li>Checking back in a few minutes</li>
               <li>Browsing our regular property listings instead</li>
             </ul>
-            <p className="text-sm text-gray-600">
+            
+            {error && error.includes('Network error') && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                <h3 className="font-medium text-blue-800">Connection Troubleshooting</h3>
+                <ul className="list-disc list-inside mt-2 text-sm text-blue-800">
+                  <li>Check your internet connection</li>
+                  <li>Try disabling any VPN or proxy services</li>
+                  <li>Try a different browser or device</li>
+                  <li>The AI service might be experiencing high traffic - try again later</li>
+                </ul>
+              </div>
+            )}
+            
+            <p className="text-sm text-gray-600 mt-4">
               Note: This feature requires the Gemini API to be properly configured. 
-              If you're the administrator, please verify your API key is correctly set up.
+              If you're the administrator, please verify your API key is correctly set up and that you're using the requested model (gemini-2.0-flash).
             </p>
           </div>
           

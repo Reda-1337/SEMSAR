@@ -225,8 +225,12 @@ export async function generatePropertyRecommendations(
 
   // Get the generative model
   try {
+    // Use gemini-2.0-flash model as requested by the user
+    const modelName = 'gemini-2.0-flash';
+    console.log(`Creating Gemini model: ${modelName}`);
+    
     const model = genAI.getGenerativeModel({
-      model: 'gemini-pro',
+      model: modelName,
       safetySettings: [
         {
           category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -261,15 +265,36 @@ export async function generatePropertyRecommendations(
       .replace('{jsonStructure}', promptTemplate.jsonGuide);
 
     try {
-      // Generate content
-      console.log('Sending request to Gemini API...');
-      const result = await model.generateContent(prompt);
+      // Generate content with improved fetch error handling
+      console.log(`Sending request to Gemini API using ${modelName} model...`);
+      
+      // Wrap the API call in a retry mechanism for better resilience
+      let result;
+      let retries = 0;
+      const maxRetries = 2;
+      
+      while (retries <= maxRetries) {
+        try {
+          result = await model.generateContent(prompt);
+          break; // If successful, exit the retry loop
+        } catch (fetchError) {
+          retries++;
+          console.error(`API fetch attempt ${retries} failed:`, fetchError);
+          
+          if (retries > maxRetries) {
+            throw new Error(`Failed to connect to Gemini API after ${maxRetries} attempts. Please check your internet connection and API key.`);
+          }
+          
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+        }
+      }
       
       if (!result || !result.response) {
         throw new Error('Empty response from Gemini API');
       }
       
-      console.log('Received response from Gemini API');
+      console.log(`Received response from Gemini API (${modelName})`);
       const response = result.response;
       const text = response.text();
       
@@ -282,7 +307,9 @@ export async function generatePropertyRecommendations(
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         console.error('Failed to extract JSON. Response text:', text.substring(0, 200) + '...');
-        throw new Error('Failed to extract valid JSON from the response');
+        
+        // More helpful error message with the full response text for debugging
+        throw new Error(`Failed to extract valid JSON from the response. Raw response: "${text.substring(0, 300)}..."`);
       }
       
       const jsonStr = jsonMatch[0];
