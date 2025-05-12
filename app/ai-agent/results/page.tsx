@@ -74,11 +74,89 @@ export default function AIAgentResultsPage() {
     }).format(price);
   };
 
+  // Language-specific UI text
+  const uiText = {
+    en: {
+      loading: "Finding Your Dream Home",
+      loadingSubtext: "Our AI is analyzing your preferences and searching for the perfect match...",
+      error: "Error",
+      noPreferences: "No preferences found. Please go back and fill out the form.",
+      goBack: "Go Back",
+      noResults: "No Results",
+      tryAgain: "No property recommendations were found. Please try with different preferences.",
+      dreamHomeMatches: "Your Dream Home Matches",
+      matchesFound: "Based on your preferences, our AI has found {count} properties that match your criteria.",
+      searchSummary: "Search Summary",
+      recommendedProperties: "Recommended Properties",
+      features: "Features",
+      whyMatchesPreferences: "Why This Matches Your Preferences",
+      contactAgent: "Contact Agent",
+      nextSteps: "Next Steps",
+      refineSearch: "Refine Your Search",
+      refineSearchSubtext: "To help us find even better matches, consider answering these additional questions:",
+      editPreferences: "Edit Preferences",
+      saveResults: "Save These Results"
+    },
+    ar: {
+      loading: "البحث عن منزل أحلامك",
+      loadingSubtext: "الذكاء الاصطناعي لدينا يحلل تفضيلاتك ويبحث عن التطابق المثالي...",
+      error: "خطأ",
+      noPreferences: "لم يتم العثور على تفضيلات. يرجى العودة وملء النموذج.",
+      goBack: "عودة",
+      noResults: "لا توجد نتائج",
+      tryAgain: "لم يتم العثور على توصيات العقارات. يرجى المحاولة بتفضيلات مختلفة.",
+      dreamHomeMatches: "تطابقات منزل أحلامك",
+      matchesFound: "بناءً على تفضيلاتك، وجد الذكاء الاصطناعي لدينا {count} عقارات تطابق معاييرك.",
+      searchSummary: "ملخص البحث",
+      recommendedProperties: "العقارات الموصى بها",
+      features: "الميزات",
+      whyMatchesPreferences: "لماذا يتطابق هذا مع تفضيلاتك",
+      contactAgent: "اتصل بالوكيل",
+      nextSteps: "الخطوات التالية",
+      refineSearch: "تحسين البحث",
+      refineSearchSubtext: "لمساعدتنا في العثور على تطابقات أفضل، يرجى الإجابة على هذه الأسئلة الإضافية:",
+      editPreferences: "تعديل التفضيلات",
+      saveResults: "حفظ هذه النتائج"
+    },
+    fr: {
+      loading: "Recherche de Votre Maison de Rêve",
+      loadingSubtext: "Notre IA analyse vos préférences et recherche la correspondance parfaite...",
+      error: "Erreur",
+      noPreferences: "Aucune préférence trouvée. Veuillez revenir en arrière et remplir le formulaire.",
+      goBack: "Retour",
+      noResults: "Aucun Résultat",
+      tryAgain: "Aucune recommandation de propriété n'a été trouvée. Veuillez essayer avec des préférences différentes.",
+      dreamHomeMatches: "Correspondances de Votre Maison de Rêve",
+      matchesFound: "Sur la base de vos préférences, notre IA a trouvé {count} propriétés qui correspondent à vos critères.",
+      searchSummary: "Résumé de la Recherche",
+      recommendedProperties: "Propriétés Recommandées",
+      features: "Caractéristiques",
+      whyMatchesPreferences: "Pourquoi Cela Correspond à Vos Préférences",
+      contactAgent: "Contacter l'Agent",
+      nextSteps: "Prochaines Étapes",
+      refineSearch: "Affiner Votre Recherche",
+      refineSearchSubtext: "Pour nous aider à trouver de meilleures correspondances, veuillez répondre à ces questions supplémentaires :",
+      editPreferences: "Modifier les Préférences",
+      saveResults: "Enregistrer Ces Résultats"
+    }
+  };
+
+  // Get the correct language text based on user preference
+  const getText = (key: string) => {
+    const language = preferences?.language || 'en';
+    const texts = uiText[language as keyof typeof uiText] || uiText.en;
+    return texts[key as keyof typeof texts] || uiText.en[key as keyof typeof uiText.en];
+  };
+
+  // Format for RTL languages (Arabic)
+  const isRTL = preferences?.language === 'ar';
+  const rtlClass = isRTL ? 'rtl' : '';
+
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto text-center py-16">
-        <h1 className="text-3xl font-bold mb-4">Finding Your Dream Home</h1>
-        <p className="mb-8 text-lg">Our AI is analyzing your preferences and searching for the perfect match...</p>
+      <div className={`max-w-5xl mx-auto text-center py-16 ${rtlClass}`}>
+        <h1 className="text-3xl font-bold mb-4">{getText('loading')}</h1>
+        <p className="mb-8 text-lg">{getText('loadingSubtext')}</p>
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600"></div>
         </div>
@@ -88,15 +166,15 @@ export default function AIAgentResultsPage() {
 
   if (error) {
     return (
-      <div className="max-w-3xl mx-auto py-8">
+      <div className={`max-w-3xl mx-auto py-8 ${rtlClass}`}>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-red-700 mb-4">Error</h1>
+          <h1 className="text-2xl font-bold text-red-700 mb-4">{getText('error')}</h1>
           <p className="text-red-700 mb-4">{error}</p>
           <button
             onClick={handleBack}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Go Back
+            {getText('goBack')}
           </button>
         </div>
       </div>
@@ -105,15 +183,15 @@ export default function AIAgentResultsPage() {
 
   if (!results) {
     return (
-      <div className="max-w-3xl mx-auto py-8">
+      <div className={`max-w-3xl mx-auto py-8 ${rtlClass}`}>
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-          <h1 className="text-2xl font-bold text-yellow-700 mb-4">No Results</h1>
-          <p className="text-yellow-700 mb-4">No property recommendations were found. Please try with different preferences.</p>
+          <h1 className="text-2xl font-bold text-yellow-700 mb-4">{getText('noResults')}</h1>
+          <p className="text-yellow-700 mb-4">{getText('tryAgain')}</p>
           <button
             onClick={handleBack}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Go Back
+            {getText('goBack')}
           </button>
         </div>
       </div>
@@ -121,21 +199,21 @@ export default function AIAgentResultsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Your Dream Home Matches</h1>
+    <div className={`max-w-5xl mx-auto ${rtlClass}`}>
+      <h1 className="text-3xl font-bold mb-2">{getText('dreamHomeMatches')}</h1>
       <p className="mb-8 text-gray-600">
-        Based on your preferences, our AI has found {results.recommendations.length} properties that match your criteria.
+        {getText('matchesFound').replace('{count}', results.recommendations.length.toString())}
       </p>
 
       {/* Search Summary */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-3">Search Summary</h2>
+        <h2 className="text-xl font-semibold mb-3">{getText('searchSummary')}</h2>
         <p className="text-gray-700">{results.searchSummary}</p>
       </div>
 
       {/* Property Recommendations */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-6">Recommended Properties</h2>
+        <h2 className="text-2xl font-semibold mb-6">{getText('recommendedProperties')}</h2>
         <div className="space-y-6">
           {results.recommendations.map((property: PropertyRecommendation) => (
             <div 
@@ -176,7 +254,7 @@ export default function AIAgentResultsPage() {
                     </div>
                   </div>
                   <div className="mb-4">
-                    <h4 className="font-semibold mb-2">Features</h4>
+                    <h4 className="font-semibold mb-2">{getText('features')}</h4>
                     <div className="flex flex-wrap gap-2">
                       {property.features.map((feature, index) => (
                         <span 
@@ -189,7 +267,7 @@ export default function AIAgentResultsPage() {
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">Why This Matches Your Preferences</h4>
+                    <h4 className="font-semibold mb-2">{getText('whyMatchesPreferences')}</h4>
                     <ul className="list-disc list-inside space-y-1">
                       {property.reasonsForMatch.map((reason, index) => (
                         <li key={index} className="text-gray-700">{reason}</li>
@@ -198,7 +276,7 @@ export default function AIAgentResultsPage() {
                   </div>
                   <div className="mt-4">
                     <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                      Contact Agent
+                      {getText('contactAgent')}
                     </button>
                   </div>
                 </div>
@@ -210,7 +288,7 @@ export default function AIAgentResultsPage() {
 
       {/* Next Steps */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Next Steps</h2>
+        <h2 className="text-2xl font-semibold mb-4">{getText('nextSteps')}</h2>
         <ul className="list-disc list-inside space-y-2">
           {results.nextSteps.map((step, index) => (
             <li key={index} className="text-gray-700">{step}</li>
@@ -220,9 +298,9 @@ export default function AIAgentResultsPage() {
 
       {/* Additional Questions */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Refine Your Search</h2>
+        <h2 className="text-2xl font-semibold mb-4">{getText('refineSearch')}</h2>
         <p className="mb-4">
-          To help us find even better matches, consider answering these additional questions:
+          {getText('refineSearchSubtext')}
         </p>
         <div className="space-y-4">
           {results.additionalQuestions.map((question, index) => (
@@ -241,10 +319,10 @@ export default function AIAgentResultsPage() {
           onClick={handleBack}
           className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
         >
-          Edit Preferences
+          {getText('editPreferences')}
         </button>
         <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-          Save These Results
+          {getText('saveResults')}
         </button>
       </div>
     </div>

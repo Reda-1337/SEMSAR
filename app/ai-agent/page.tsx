@@ -21,6 +21,7 @@ export default function AIAgentPage() {
     preferredFeatures: [],
     timeframe: 'Within 3 months',
     additionalInfo: '',
+    language: 'en', // Default language is English
   });
 
   // Property types
@@ -31,6 +32,13 @@ export default function AIAgentPage() {
     'Garage', 'Garden', 'Pool', 'Basement', 'Balcony', 'Fireplace',
     'Air Conditioning', 'Furnished', 'Elevator', 'Gym', 'Security System',
     'Waterfront', 'Mountain View', 'Pets Allowed', 'Wheelchair Access'
+  ];
+
+  // Language options
+  const languages = [
+    { value: 'en', label: 'English' },
+    { value: 'ar', label: 'العربية (Arabic)' },
+    { value: 'fr', label: 'Français (French)' }
   ];
 
   // Handle input changes
@@ -350,6 +358,27 @@ export default function AIAgentPage() {
                   rows={5}
                   placeholder="Example: I need a home office space, I want to be close to schools, I prefer a quiet neighborhood, etc."
                 ></textarea>
+              </div>
+              
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Preferred Language
+                </label>
+                <select
+                  name="language"
+                  value={preferences.language}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border rounded"
+                >
+                  {languages.map(lang => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-gray-500 mt-1">
+                  Select your preferred language for AI recommendations and communication.
+                </p>
               </div>
             </div>
           )}

@@ -8,6 +8,7 @@ A modern real estate platform with an AI-powered home finder feature that helps 
 - **Structured Output**: Gemini API generates structured property recommendations in a consistent format
 - **Modern UI**: Built with Next.js and Tailwind CSS for a beautiful, responsive user experience
 - **Multi-step Form**: Easy-to-use preference collection form with a step-by-step interface
+- **Multilingual Support**: Full support for English, Arabic, and French throughout the platform
 
 ## Getting Started
 
@@ -35,8 +36,8 @@ A modern real estate platform with an AI-powered home finder feature that helps 
    ```
 
 4. Edit `.env.local` and add your Gemini API key:
-   ```
-   NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+   ```bash
+   NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
    ```
 
 5. Start the development server:
@@ -51,9 +52,10 @@ A modern real estate platform with an AI-powered home finder feature that helps 
 The AI Home Finder feature uses Google's Gemini AI to generate personalized property recommendations:
 
 1. Users complete a multi-step form specifying their preferences (location, budget, features, etc.)
-2. The application sends these preferences to the Gemini API with a prompt that requests structured output
-3. Gemini analyzes the preferences and generates realistic property recommendations
-4. The results are displayed in an easy-to-browse format with match scores and explanations
+2. Users can select their preferred language (English, Arabic, or French)
+3. The application sends these preferences to the Gemini API with a prompt in the chosen language
+4. Gemini analyzes the preferences and generates realistic property recommendations in the selected language
+5. The results are displayed in an easy-to-browse format with match scores and explanations
 
 ### Output Structure
 
@@ -64,6 +66,8 @@ The Gemini API returns a structured JSON response with:
 - Search summary explaining the approach
 - Next steps for the user
 - Additional questions to refine the search
+
+All text is returned in the user's chosen language.
 
 ## Customization
 
@@ -93,6 +97,14 @@ vercel deploy
 ```
 
 Remember to set up the environment variable for your Gemini API key in your deployment environment.
+
+### Required Environment Variables
+
+When deploying to Vercel, add the following environment variable:
+
+```
+NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+```
 
 ## License
 
